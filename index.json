@@ -1,0 +1,137 @@
+{
+  "type": "fulltext-index",
+  "name": "imdb-index",
+  "uuid": "7103dcd1a3781f50",
+  "sourceType": "gocbcore",
+  "sourceName": "imdb",
+  "planParams": {
+    "maxPartitionsPerPIndex": 64,
+    "indexPartitions": 16
+  },
+  "params": {
+    "doc_config": {
+      "docid_prefix_delim": "",
+      "docid_regexp": "",
+      "mode": "scope.collection.type_field",
+      "type_field": "type"
+    },
+    "mapping": {
+      "analysis": {},
+      "default_analyzer": "standard",
+      "default_datetime_parser": "dateTimeOptional",
+      "default_field": "_all",
+      "default_mapping": {
+        "dynamic": false,
+        "enabled": false
+      },
+      "default_type": "_default",
+      "docvalues_dynamic": false,
+      "index_dynamic": false,
+      "store_dynamic": false,
+      "type_field": "_type",
+      "types": {
+        "_default._default": {
+          "dynamic": false,
+          "enabled": true,
+          "properties": {
+            "IMDB_Rating": {
+              "dynamic": false,
+              "enabled": true,
+              "fields": [
+                {
+                  "index": true,
+                  "name": "IMDB_Rating",
+                  "store": true,
+                  "type": "number"
+                }
+              ]
+            },
+            "Overview": {
+              "dynamic": false,
+              "enabled": true,
+              "fields": [
+                {
+                  "analyzer": "en",
+                  "index": true,
+                  "name": "Overview",
+                  "store": true,
+                  "type": "text"
+                }
+              ]
+            },
+            "Overview_embedding": {
+              "dynamic": false,
+              "enabled": true,
+              "fields": [
+                {
+                  "dims": 768,
+                  "index": true,
+                  "name": "Overview_embedding",
+                  "similarity": "dot_product",
+                  "type": "vector",
+                  "vector_index_optimized_for": "recall"
+                }
+              ]
+            },
+            "Poster_Link": {
+              "dynamic": false,
+              "enabled": true,
+              "fields": [
+                {
+                  "analyzer": "en",
+                  "index": true,
+                  "name": "Poster_Link",
+                  "store": true,
+                  "type": "text"
+                }
+              ]
+            },
+            "Released_Year": {
+              "dynamic": false,
+              "enabled": true,
+              "fields": [
+                {
+                  "index": true,
+                  "name": "Released_Year",
+                  "store": true,
+                  "type": "number"
+                }
+              ]
+            },
+            "Runtime": {
+              "dynamic": false,
+              "enabled": true,
+              "fields": [
+                {
+                  "analyzer": "en",
+                  "index": true,
+                  "name": "Runtime",
+                  "store": true,
+                  "type": "text"
+                }
+              ]
+            },
+            "Series_Title": {
+              "dynamic": false,
+              "enabled": true,
+              "fields": [
+                {
+                  "analyzer": "keyword",
+                  "index": true,
+                  "name": "Series_Title",
+                  "store": true,
+                  "type": "text"
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "store": {
+      "indexType": "scorch",
+      "segmentVersion": 16
+    }
+  },
+  "sourceParams": {}
+}

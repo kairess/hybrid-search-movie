@@ -3,15 +3,17 @@ import os
 from couchbase.cluster import Cluster
 from couchbase.auth import PasswordAuthenticator
 from couchbase.options import ClusterOptions
-from openai import OpenAI
 from datetime import timedelta
 from tqdm import tqdm
 import uuid
 import pandas as pd
+import google.generativeai as genai
 
+load_dotenv()
+
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
 # Load environment variables
-load_dotenv()
 DB_CONN_STR = os.getenv("DB_CONN_STR")
 DB_USERNAME = os.getenv("DB_USERNAME")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
@@ -20,30 +22,6 @@ DB_SCOPE = os.getenv("DB_SCOPE")
 DB_COLLECTION = os.getenv("DB_COLLECTION")
 EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL")
 MOVIES_DATASET = "imdb_top_1000.csv"
-
-# Use text-embedding-3-small as the embedding model if not set
-if not EMBEDDING_MODEL:
-    EMBEDDING_MODEL = "text-embedding-3-small"
-
-
-def check_environment_variable(variable_name):
-    """Check if environment variable is set"""
-    if variable_name not in os.environ:
-        raise ValueError(
-            f"{variable_name} environment variable is not set. Please add it to the environment"
-        )
-
-
-# Ensure that all environment variables are set
-check_environment_variable("OPENAI_API_KEY")
-check_environment_variable("DB_CONN_STR")
-check_environment_variable("DB_USERNAME")
-check_environment_variable("DB_PASSWORD")
-check_environment_variable("DB_BUCKET")
-check_environment_variable("DB_SCOPE")
-check_environment_variable("DB_COLLECTION")
-client = OpenAI()
-
 
 def connect_to_couchbase(connection_string, db_username, db_password):
     """Connect to couchbase"""
@@ -59,10 +37,15 @@ def connect_to_couchbase(connection_string, db_username, db_password):
     return cluster
 
 
-def generate_embeddings(client, input_data):
-    """Generate OpenAI embeddings for the input data"""
-    response = client.embeddings.create(input=input_data, model=EMBEDDING_MODEL)
-    return response.data[0].embedding
+def generate_embeddings(input_data):
+    """Google Generative AI를 사용하여 입력 데이터의 임베딩을 생성합니다"""
+    result = genai.embed_content(
+        model=EMBEDDING_MODEL,
+        content=input_data,
+        task_type="retrieval_document",
+        title="Movie Overview Embedding"
+    )
+    return result['embedding']
 
 
 try:
@@ -83,7 +66,7 @@ try:
     data_in_dict = data.to_dict(orient="records")
     print("Ingesting Data...")
     for row in tqdm(data_in_dict):
-        row["Overview_embedding"] = generate_embeddings(client, row["Overview"])
+        row["Overview_embedding"] = generate_embeddings(row["Overview"])
         doc_id = uuid.uuid4().hex
         collection.upsert(doc_id, row)
 

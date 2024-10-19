@@ -1,8 +1,44 @@
 ## Hybrid Movie Search using Couchbase
 
-This is a demo app built to perform hybrid search using the Vector Search capabilities of Couchbase. The demo allows users to search for movies based on the synopsis or overview of the movie using both the native [Couchbase Python SDK](https://docs.couchbase.com/python-sdk/current/howtos/full-text-searching-with-sdk.html) and using the [LangChain Vector Store integration](https://python.langchain.com/docs/integrations/vectorstores/couchbase/).
+이 데모는 Couchbase의 벡터 검색 기능을 사용하여 영화 개요 또는 영화 개요를 기반으로 영화를 검색하는 기능을 제공합니다. [Couchbase Python SDK](https://docs.couchbase.com/python-sdk/current/howtos/full-text-searching-with-sdk.html)
 
-> Note that you need Couchbase Server 7.6 or higher for Vector Search.
+> 벡터 검색을 위해서는 Couchbase Server 7.6 이상이 필요합니다.
+
+### 설정
+
+1. [Couchbase Capella](https://cloud.couchbase.com) 계정 생성
+2. 새로운 Cluster 생성 (GCP 권장)
+3. 새로운 Bucket 생성 (Bucket: `imdb`, Scope: `_default`, Collection: `_default`)
+  - Use system generated _default for scope and collection 체크
+4. `.env`, `.streamlit/secrets.toml` 파일 생성 후 아래 환경 변수 설정
+  ```
+  GOOGLE_API_KEY=<google-api-key>
+  DB_CONN_STR=<couchbase_connection_string>
+  DB_USERNAME=<couchbase_username>
+  DB_PASSWORD=<couchbase_password>
+  DB_BUCKET=imdb
+  DB_SCOPE=_default
+  DB_COLLECTION=_default
+  INDEX_NAME=imdb-index
+  EMBEDDING_MODEL=models/text-embedding-004
+  ```
+  - `google-api-key`는 [Google AI Studio](https://aistudio.google.com/app/apikey)에서 발급
+  - `couchbase_connection_string`은 Connect 탭에서 Public Connection String 복사
+  - `couchbase_username` 및 `couchbase_password`는 Settings 탭 - Cluster Access 메뉴에서 생성 (All Buckets, All Scopes, Read/Write)
+5. `requirements.txt`에 명시된 라이브러리 설치
+  ```
+  pip install -r requirements.txt
+  ```
+6. `ingest.py` 실행: Couchbase에 IMDB 데이터 저장
+  ```
+  python ingest.py
+  ```
+7. Data Tools - Search 탭에서 인덱스 생성
+  - Advanced Mode 클릭
+  - Import from File 클릭
+  - `index.json` 파일 선택
+  - Create Index 클릭
+---
 
 ### How does it work?
 
