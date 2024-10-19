@@ -37,15 +37,23 @@ def connect_to_couchbase(connection_string, db_username, db_password):
     return cluster
 
 
-def generate_embeddings(input_data):
+def generate_embeddings(title, input_data):
     """Google Generative AI를 사용하여 입력 데이터의 임베딩을 생성합니다"""
     result = genai.embed_content(
         model=EMBEDDING_MODEL,
         content=input_data,
         task_type="retrieval_document",
-        title="Movie Overview Embedding"
+        title=title,
     )
     return result['embedding']
+
+def cleanup_poster_url(poster_url):
+    """Convert from https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_UX67_CR0,0,67,98_AL_.jpg to https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg"""
+
+    prefix = poster_url.split("_V1_")[0]
+    suffix = poster_url.split("_AL_")[1]
+
+    return prefix + suffix
 
 
 try:
@@ -62,11 +70,12 @@ try:
     data["Gross"] = data["Gross"].fillna(0)
     data["Certificate"] = data["Certificate"].fillna("NA")
     data["Meta_score"] = data["Meta_score"].fillna(-1)
+    data["Poster_Link"] = data["Poster_Link"].apply(cleanup_poster_url)
 
     data_in_dict = data.to_dict(orient="records")
     print("Ingesting Data...")
     for row in tqdm(data_in_dict):
-        row["Overview_embedding"] = generate_embeddings(row["Overview"])
+        row["Overview_embedding"] = generate_embeddings(row["Series_Title"], row["Overview"])
         doc_id = uuid.uuid4().hex
         collection.upsert(doc_id, row)
 

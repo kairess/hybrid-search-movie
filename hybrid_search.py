@@ -16,19 +16,9 @@ def generate_embeddings(input_data):
     result = genai.embed_content(
         model=EMBEDDING_MODEL,
         content=input_data,
-        task_type="retrieval_document",
-        title="Movie Search Embedding"
+        task_type="retrieval_query",
     )
     return result['embedding']
-
-
-def cleanup_poster_url(poster_url):
-    """Convert from https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_UX67_CR0,0,67,98_AL_.jpg to https://m.media-amazon.com/images/M/MV5BMDFkYTc0MGEtZmNhMC00ZDIzLWFmNTEtODM1ZmRlYWMwMWFmXkEyXkFqcGdeQXVyMTMxODk2OTU@._V1_.jpg"""
-
-    prefix = poster_url.split("_V1_")[0]
-    suffix = poster_url.split("_AL_")[1]
-
-    return prefix + suffix
 
 
 @st.cache_resource(show_spinner="Connecting to Couchbase")
@@ -184,37 +174,62 @@ if __name__ == "__main__":
         if show_filter:
             st.json(hybrid_search_filter)
 
-    submit = st.button("Submit")
+    if text:
+        with st.spinner("Searching..."):
+            # Translate the search text to English if it's in Korean
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content(
+                f"Translate the following text to English. Only return the translated text without any additional comments: {text}",
+                generation_config=genai.types.GenerationConfig(
+                    candidate_count=1,
+                    max_output_tokens=100,
+                    temperature=0.2,
+                ),
+            )
+            search_text = response.text.strip()
+            st.write(f"Translated text: {search_text}")
 
-    if submit:
-        # Fetch the filters
-        search_filters = create_filter(year_range, rating, search_in_title, text)
+            # Fetch the filters
+            search_filters = create_filter(year_range, rating, search_in_title, text)
 
-    
-        # Search using the Couchbase Python SDK
-        results = search_couchbase(
-            scope,
-            INDEX_NAME,
-            "Overview_embedding",
-            text,
-            k=no_of_results,
-            search_options=search_filters,
-        )
+            # Search using the Couchbase Python SDK
+            results = search_couchbase(
+                scope,
+                INDEX_NAME,
+                "Overview_embedding",
+                search_text,
+                k=no_of_results,
+                search_options=search_filters,
+            )
 
-        for doc in results:
-            movie, score = doc
+            for doc in results:
+                movie, score = doc
 
-            # Display the results in a grid
-            st.header(movie["Series_Title"])
-            col1, col2 = st.columns(2)
-            with col1:
-                st.image(
-                    cleanup_poster_url(movie["Poster_Link"]), use_column_width=True
-                )
-            with col2:
-                st.write(movie["Overview"])
-                st.write(f"Score: {score:.{3}f}")
-                st.write("Released Year:", movie["Released_Year"])
-                st.write("IMDB Rating:", movie["IMDB_Rating"])
-                st.write("Runtime:", movie["Runtime"])
-            st.divider()
+                # Display the results in a grid
+                st.header(movie["Series_Title"])
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.image(movie["Poster_Link"], use_column_width=True)
+                with col2:
+                    st.write(movie["Overview"])
+
+                    # Translate the movies text to Korean
+                    try:
+                        model = genai.GenerativeModel("gemini-1.5-flash")
+                        response = model.generate_content(
+                            f"Translate the following text to Korean. Only return the translated text without any additional comments: {movie['Overview']}",
+                            generation_config=genai.types.GenerationConfig(
+                                candidate_count=1,
+                                max_output_tokens=100,
+                                temperature=0.2,
+                            ),
+                        )
+                        st.write(response.text.strip())
+                    except Exception as e:
+                        print(f"Error translating text: {e}")
+
+                    st.write(f"Score: {score:.{3}f}")
+                    st.write("Released Year:", movie["Released_Year"])
+                    st.write("IMDB Rating:", movie["IMDB_Rating"])
+                    st.write("Runtime:", movie["Runtime"])
+                st.divider()

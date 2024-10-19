@@ -4,6 +4,8 @@
 
 > 벡터 검색을 위해서는 Couchbase Server 7.6 이상이 필요합니다.
 
+![](result/result.png)
+
 ### 설정
 
 1. [Couchbase Capella](https://cloud.couchbase.com) 계정 생성
@@ -48,7 +50,7 @@
 
 You can perform semantic searches for movies based on the plot synopsis. Additionally, you can filter the results based on the year of release and the IMDB rating for the movie. Optionally, you can also search for the keyword in the movie title.
 
-![hybrid search demo](hybrid_search_demo.png)
+![hybrid search demo](result/hybrid_search_demo.png)
 
 The hybrid search can be performed using both the Couchbase Python SDK & the LangChain Vector Store integration for Couchbase. We use OpenAI for generating the embeddings.
 
