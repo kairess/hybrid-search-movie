@@ -38,6 +38,10 @@
   - Import from File 클릭
   - `index.json` 파일 선택
   - Create Index 클릭
+8. Streamlit 애플리케이션 실행
+  ```
+  streamlit run hybrid_search.py
+  ```
 ---
 
 ### How does it work?
